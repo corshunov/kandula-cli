@@ -4,7 +4,11 @@ Welcome to Kandula CLI!
 
 The tool provides command line interface to operate Kandula application servers.
 
+
+## Installation
+
 In order to use the tool:  
+- download the tool with `git clone git@github.com:corshunov/kandula-cli.git`
 - make sure you have AWS profile for using `awscli`  
 - make sure you have Python3 installed
 - install Python libs with `python3 -m pip install -r /script_dir/requirements.txt`
@@ -17,6 +21,9 @@ In order to use the tool:
   |:---------------|:--------------|
   | main_tag_key   | Project       |
   | main_tag_value | kandula       |
+
+
+## Usage
 
 The tool provides 4 methods:
 - get-instances  
