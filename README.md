@@ -43,13 +43,13 @@ The tool provides 4 methods:
   Instances can be filtered by state with option `-s` (`--state`). In order to specify several states, use the option several times (e.g. `kancli get-instances -s running -s stopped`).
 
 - start-instances  
-  Allows to start instances that are in stopped state. Instances in other states are ignored.  
+  Allows to start Kandula instances that are in stopped state. Instances in other states are ignored.  
 
 - stop-instances  
-  Allows to stop instances that are in running or pending state. Instances in other states are ignored.
+  Allows to stop Kandula instances that are in running or pending state. Instances in other states are ignored.
 
 - terminate-instances  
-  Allows to terminate instances that are not already in shutting-down or terminated states.
+  Allows to terminate Kandula instances that are not already in shutting-down or terminated states.
 
 Methods to start, stop, and terminate instances support flag `--dry-run` allowing to show the result of operations without actually running them.
 
