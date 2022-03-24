@@ -12,27 +12,32 @@ Default values are:
 | main_tag_key   | Project       |
 | main_tag_value | kandula       |
 
+In order to use the tool:  
+- adjust settings (if needed)  
+- make the script executable with `chmod +x /script_dir/kancli`  
+- make sure you have AWS profile for using awscli  
+
 The tool provides 4 methods:
 - get-instances  
   Allows to get Kandula instances (either just names, or full info by using flag `-f`).  
   The output by default is text styled depending on instance state:
-  | State         | Style                                                    |
-  |:--------------|:---------------------------------------------------------|
-  | pending       | <u><span style="color:green">green underlined</span></u> |
-  | running       | <span style="color:green">green</span>                   |
-  | stopping      | <u>default underlined</u>                                |
-  | stopped       | default                                                  |
-  | shutting-down | <u><span style="color:red">red underlined</span></u>     |
-  | terminated    | <span style="color:red">green</span>                     |
+  | State         | Style              |
+  |:--------------|:-------------------|
+  | pending       | green underlined   |
+  | running       | green              |
+  | stopping      | default underlined |
+  | stopped       | default            |
+  | shutting-down | red underlined     |
+  | terminated    | red                |
 
 - start-instances  
-  Only instances in stopped state can be started. Instances in other states are ignored.  
+  Allows to start instances that are in stopped state. Instances in other states are ignored.  
 
 - stop-instances  
-  Only instances in running or pending state can be stopped. Instances in other states are ignored.
+  Allows to stop instances that are in running or pending state. Instances in other states are ignored.
 
 - terminate-instances  
-  Instances already in shutting-down or terminated states are ignored.
+  Allows to terminate instances that are not already in shutting-down or terminated states.
 
 Methods to start, stop, and terminate instances support flag `--dry-run` allowing to show the result of operations without actually running them.
 
