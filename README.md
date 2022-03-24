@@ -4,20 +4,19 @@ Welcome to Kandula CLI!
 
 The tool provides command line interface to operate Kandula application servers.
 
-Kandula servers must be tagged with key `main_tag_key` and value `main_tag_value` which can be adjusted in `settings.json` file.
-
-Default values are:  
-| Setting        | Default value |
-|:---------------|:--------------|
-| main_tag_key   | Project       |
-| main_tag_value | kandula       |
-
 In order to use the tool:  
 - make sure you have AWS profile for using `awscli`  
 - make sure you have Python3 installed
 - install Python libs with `python3 -m pip install -r /script_dir/requirements.txt`
 - make the script executable with `chmod +x /script_dir/kancli`  
 - adjust settings (if needed)  
+  Kandula servers must be tagged with key `main_tag_key` and value `main_tag_value` which can be adjusted in `settings.json` file.
+
+  Default values are:  
+  | Setting        | Default value |
+  |:---------------|:--------------|
+  | main_tag_key   | Project       |
+  | main_tag_value | kandula       |
 
 The tool provides 4 methods:
 - get-instances  
