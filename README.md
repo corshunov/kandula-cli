@@ -13,9 +13,11 @@ Default values are:
 | main_tag_value | kandula       |
 
 In order to use the tool:  
-- adjust settings (if needed)  
+- make sure you have AWS profile for using `awscli`  
+- make sure you have Python3 installed
+- install Python libs with `python3 -m pip install -r /script_dir/requirements.txt`
 - make the script executable with `chmod +x /script_dir/kancli`  
-- make sure you have AWS profile for using awscli  
+- adjust settings (if needed)  
 
 The tool provides 4 methods:
 - get-instances  
