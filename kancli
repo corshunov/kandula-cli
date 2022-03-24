@@ -190,8 +190,8 @@ def kancli(ctx):
     The tool provides command line interface
     to operate Kandula application servers.
 
-    Kandula servers must have tag <main_tag_key>
-    with value <main_tag_value> which can be adjusted
+    Kandula servers must be tagged with key <main_tag_key>
+    and value <main_tag_value> which can be adjusted
     in 'settings.json' file.
     
     \b
