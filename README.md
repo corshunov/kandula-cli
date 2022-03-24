@@ -39,6 +39,8 @@ The tool provides 4 methods:
   | shutting-down | red underlined     |
   | terminated    | red                |
 
+  Instances can be filtered by state with option `-s` (`--state`). In order to specify several states, use the option several times (e.g. `kancli get-instances -s running -s stopped`).
+
 - start-instances  
   Allows to start instances that are in stopped state. Instances in other states are ignored.  
 
