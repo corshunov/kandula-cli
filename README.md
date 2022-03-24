@@ -28,7 +28,8 @@ In order to use the tool:
 The tool provides 4 methods:
 - get-instances  
   Allows to get Kandula instances (either just names, or full info by using flag `-f`).  
-  The output by default is text styled depending on instance state:
+  The output can be set with option `-o` (`--output`) to `text` (default) or `json`.  
+  Text output is styled depending on instance state:
   | State         | Style              |
   |:--------------|:-------------------|
   | pending       | green underlined   |
