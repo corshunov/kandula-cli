@@ -7,9 +7,37 @@ import click
 from boto3 import client
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(os.path.basename(__file__))
+logger.setLevel(logging.DEBUG)
+
+stream_handler = logging.StreamHandler()
+stream_formatter = logging.Formatter(
+    '%(asctime)s - [%(levelname)s]: %(message)s'
+)
+stream_handler.setFormatter(stream_formatter)
+stream_handler.setLevel(logging.CRITICAL)
+logger.addHandler(stream_handler)
+
+file_handler = logging.FileHandler('kandula.log')
+file_formatter = logging.Formatter(
+    f'{{"time":"%(asctime)s","name":"%(name)s",'
+    f'"level":"%(levelname)s","message":"%(message)s"}}'
+)
+file_handler.setFormatter(file_formatter)
+file_handler.setLevel(logging.DEBUG)
+logger.addHandler(file_handler)
+
 
 ec2_client = client('ec2')
+
+
+def set_stream_level(n_verbose):
+    if n_verbose == 0:
+        stream_handler.setLevel(logging.CRITICAL)
+    if n_verbose == 1:
+        stream_handler.setLevel(logging.WARNING)
+    elif n_verbose > 1:
+        stream_handler.setLevel(logging.INFO)
 
 
 def get_state_reason(instance):
@@ -20,79 +48,48 @@ def get_state_reason(instance):
 
 def apply_style(state, string):
     fg = None
-    italic = False
+    underline = False
 
     if state == "pending":
         fg = 'green'
-        italic = True
+        underline = True
     elif state == "running":
         fg = 'green'
-        italic = False
+        underline = False
     elif state == "shutting-down":
         fg = 'red'
-        italic = True
+        underline = True
     elif state == "terminated":
         fg = 'red'
-        italic = False
+        underline = False
     elif state == "stopping":
         fg = None
-        italic = True
+        underline = True
     elif state == "stopped":
         fg = None
-        italic = False
+        underline = False
 
-    return click.style(string, fg=fg, underline=italic)
-
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-@click.version_option("1.0.0", '-v', '--version', prog_name='Kandula CLI')
-@click.group(context_settings=CONTEXT_SETTINGS)
-@click.pass_context
-def kancli(ctx):
-    """
-    Welcome to Kandula CLI!
-    
-    The tool provides command line interface
-    to operate Kandula application servers.
-
-    Kandula servers must have tag <main_tag_key>
-    with value <main_tag_value> which can be adjusted
-    in 'settings.json' file.
-    
-    \b
-    Default values are:
-    - main_tag_key:   Project
-    - main_tag_value: kandula
-    """
-
-    settings_fp = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'settings.json')
-    try:
-        with open(settings_fp, 'r') as f:
-            settings = json.load(f)
-
-        main_tag_key = settings['main_tag_key']
-        main_tag_value = settings['main_tag_value']
-    except:
-        main_tag_key = "Project"
-        main_tag_value = "kandula"
-
-    ctx.ensure_object(dict)
-    ctx.obj['main_tag_key'] = main_tag_key
-    ctx.obj['main_tag_value'] = main_tag_value
+    return click.style(string, fg=fg, underline=underline)
 
 
 def get_instances_data(ctx, state):
     main_tag_key = ctx.obj['main_tag_key']
     main_tag_value = ctx.obj['main_tag_value']
 
+    logger.info("Connecting to AWS API...")
     try:
         response = ec2_client.describe_instances()
     except Exception as e:
-        logger.exception(e)
+        logger.warning(e)
+        ctx.abort()
+
+    logger.info("Received response about AWS instances.")
 
     if response['ResponseMetadata']['HTTPStatusCode'] != 200:
-        logger.exception("Bad request.")
+        logger.warning("AWS response is not 200.")
+        ctx.abort()
 
+    logger.info("Processing AWS instances...")
     instances_data = [i for res in response['Reservations'] for i in res['Instances']]
 
     instances = []
@@ -150,6 +147,8 @@ def get_instances_data(ctx, state):
         instances.append(new_i)
 
     instances = sorted(instances, key=lambda x: x["Name"])
+
+    logger.info("AWS instances processing finished.")
     return instances
 
 
@@ -179,6 +178,50 @@ def get_short_text(instances):
     return text
 
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+@click.version_option("1.0.0", '-v', '--version', prog_name='Kandula CLI')
+@click.group(context_settings=CONTEXT_SETTINGS)
+@click.pass_context
+def kancli(ctx):
+    """
+    Welcome to Kandula CLI!
+    
+    The tool provides command line interface
+    to operate Kandula application servers.
+
+    Kandula servers must have tag <main_tag_key>
+    with value <main_tag_value> which can be adjusted
+    in 'settings.json' file.
+    
+    \b
+    Default values are:
+    - main_tag_key:   Project
+    - main_tag_value: kandula
+    """
+
+    logger.info("Kandula CLI initializing...")
+
+    settings_fp = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'settings.json')
+    try:
+        logger.info("Loading settings.")
+        with open(settings_fp, 'r') as f:
+            settings = json.load(f)
+
+        main_tag_key = settings['main_tag_key']
+        main_tag_value = settings['main_tag_value']
+    except:
+        logger.warning("Unsuccessfull loading settings. Default settings will be used.")
+        main_tag_key = "Project"
+        main_tag_value = "kandula"
+
+    ctx.ensure_object(dict)
+    ctx.obj['main_tag_key'] = main_tag_key
+    ctx.obj['main_tag_value'] = main_tag_value
+
+    logger.info("Kandula CLI initialized.")
+
+
 @kancli.command('get-instances', short_help="")
 @click.option('-s', '--state', type=click.Choice(['all', 'pending', 'running',
                                                   'shutting-down', 'terminated',
@@ -188,12 +231,16 @@ def get_short_text(instances):
               help="Return all data about instances.")
 @click.option('-o', '--output', type=click.Choice(['text', 'json']),
               default='text', help="Output format (default is 'text').")
-@click.option('-v', count=True, help="Print logging info (-vvv is the most detailed level).")
+@click.option('-v', count=True, help="Print logging info (-v: WARNING, -vv: INFO).")
 @click.pass_context
 def get_instances(ctx, state, full, output, v):
     """
     Get instances sorted by name.
     """
+
+    logger.info("Running get-instances method...")
+
+    set_stream_level(v)
 
     state = sorted(set(state))
     instances = get_instances_data(ctx, state)
@@ -209,17 +256,18 @@ def get_instances(ctx, state, full, output, v):
             click.echo(json.dumps(instances, indent=4, default=str))
     else:
         if output == "text":
-            #click.echo_via_pager(get_short_text(instances))
             click.echo(get_short_text(instances))
         elif output == "json":
             instances = list(map(lambda x: x["Name"], instances))
             click.echo(json.dumps(instances, indent=4, default=str))
 
+    logger.info("get-instances method done.")
+
 
 @kancli.command('start-instances', short_help="")
 @click.option('--dry-run', is_flag=True, default=False,
               help='Show the result of operation without actually running it.')
-@click.option('-v', count=True, help="Print logging info (-vvv is the most detailed level).")
+@click.option('-v', count=True, help="Print logging info (-v: WARNING, -vv: INFO).")
 @click.argument('name', nargs=-1, required=True)
 @click.pass_context
 def start_instances(ctx, dry_run, v, name):
@@ -229,7 +277,11 @@ def start_instances(ctx, dry_run, v, name):
     Only instances in stopped state can be started.
     Instances in other states are ignored.
     """
+
+    logger.info("Running start-instances method...")
     
+    set_stream_level(v)
+
     instances_data = get_instances_data(ctx, state=['all'])
     ready_instance_ids = []
     click.echo('Checking instances:')
@@ -254,11 +306,13 @@ def start_instances(ctx, dry_run, v, name):
         ec2_client.start_instances(InstanceIds=ready_instance_ids)
         click.echo('Instances were instructed to start.')
 
+    logger.info("start-instances method done.")
+
 
 @kancli.command('stop-instances', short_help="")
 @click.option('--dry-run', is_flag=True, default=False,
               help='Show the result of operation without actually running it.')
-@click.option('-v', count=True, help="Print logging info (-vvv is the most detailed level).")
+@click.option('-v', count=True, help="Print logging info (-v: WARNING, -vv: INFO).")
 @click.argument('name', nargs=-1, required=True)
 @click.pass_context
 def stop_instances(ctx, dry_run, v, name):
@@ -268,6 +322,10 @@ def stop_instances(ctx, dry_run, v, name):
     Only instances in running or pending state can be stopped.
     Instances in other states are ignored.
     """
+
+    logger.info("Running stop-instances method...")
+
+    set_stream_level(v)
 
     instances_data = get_instances_data(ctx, state=['all'])
     ready_instance_ids = []
@@ -293,11 +351,13 @@ def stop_instances(ctx, dry_run, v, name):
         ec2_client.stop_instances(InstanceIds=ready_instance_ids)
         click.echo('Instances were instructed to stop.')
 
+    logger.info("stop-instances method done.")
+
 
 @kancli.command('terminate-instances', short_help="")
 @click.option('--dry-run', is_flag=True, default=False,
               help='Show the result of operation without actually running it.')
-@click.option('-v', count=True, help="Print logging info (-vvv is the most detailed level).")
+@click.option('-v', count=True, help="Print logging info (-v: WARNING, -vv: INFO).")
 @click.argument('name', nargs=-1, required=True)
 @click.pass_context
 def terminate_instances(ctx, dry_run, v, name):
@@ -306,6 +366,10 @@ def terminate_instances(ctx, dry_run, v, name):
 
     Instances already in shutting-down or terminated states are ignored.
     """
+
+    logger.info("Running terminate-instances method...")
+
+    set_stream_level(v)
 
     instances_data = get_instances_data(ctx, state=['all'])
     ready_instance_ids = []
@@ -330,6 +394,8 @@ def terminate_instances(ctx, dry_run, v, name):
 
         ec2_client.terminate_instances(InstanceIds=ready_instance_ids)
         click.echo('Instances were instructed to terminate.')
+
+    logger.info("terminate-instances method done.")
 
 
 if __name__ == '__main__':
