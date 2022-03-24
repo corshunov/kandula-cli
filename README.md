@@ -50,4 +50,4 @@ The tool provides 4 methods:
 
 Methods to start, stop, and terminate instances support flag `--dry-run` allowing to show the result of operations without actually running them.
 
-The tool logs to `script_dir/kandula.log` file and allows to print logs to terminal (`-v` for WARNING level and `-vv` for INFO level).
+The tool logs to `script_dir/kandula.log` file and allows to print logs to terminal by specifying flag `-v` (WARNING level) or `-vv` (INFO level) for all 4 methods.
